@@ -1,0 +1,36 @@
+{
+  "name": "hashcatGUI",
+  "private": true,
+  "version": "1.0.0",
+  "author": "Meteor_Kai & 小网洞",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "portable": "pnpm portable:full",
+    "portable:full": "pnpm tauri build --no-bundle && powershell -ExecutionPolicy Bypass -File scripts/pack-portable.ps1",
+    "portable:lite": "pnpm tauri build --no-bundle --config src-tauri/tauri.lite.conf.json && powershell -ExecutionPolicy Bypass -File scripts/pack-lite.ps1"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-opener": "^2",
+    "lucide-react": "^1.16.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "three": "^0.184.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/three": "^0.184.1",
+    "@vitejs/plugin-react": "^4.6.0",
+    "playwright-core": "^1.60.0",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4"
+  }
+}

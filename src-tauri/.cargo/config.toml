@@ -1,0 +1,7 @@
+[target.x86_64-pc-windows-gnu]
+rustflags = [
+    "-L", "C:/Users/Administrator/.rustup/toolchains/stable-x86_64-pc-windows-gnu/lib/rustlib/x86_64-pc-windows-gnu/lib/self-contained"
+]
+
+[dependencies]
+minxp = "0.1"

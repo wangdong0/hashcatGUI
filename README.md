@@ -34,7 +34,7 @@ If you do not require the hc22000 conversion function and already have hashcat i
 >
 > **Win7 users need to install [VxKex](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/KexSetup_1.1.5_1679.exe) (to solve the ProcessPrng issue) and [MicrosoftEdgeWebView2Runtime](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/MicrosoftEdgeWebView2RuntimeInstallerX64.exe) (a dependency for program operation).**
 
-1. Install **[VxKex](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/KexSetup_1.1.5_1679.exe)**. After installation, right-click on hashcatGUI.exe, select "Properties", and enable VxKex in the "VxKex" tab.
+1. Install **[VxKex](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/KexSetup_1.1.5_1679.exe)** (https://github.com/i486/VxKex). After installation, right-click on **hashcatGUI.exe**, select "Properties", and enable VxKex in the "VxKex" tab.
 
    ![image-20260729071308273](README.assets/image-20260729071308273.png)
 

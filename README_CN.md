@@ -34,7 +34,7 @@
 >
 > **Win7 用户需安装[VxKex](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/KexSetup_1.1.5_1679.exe)（解决ProcessPrng问题）和[MicrosoftEdgeWebView2Runtime](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/MicrosoftEdgeWebView2RuntimeInstallerX64.exe)（程序运行依赖）。**
 
-1. 安装 [**VxKex**](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/KexSetup_1.1.5_1679.exe) 。安装完成并右键hashcatGUI.exe，选择属性，在VxKex选项卡中启用VxKex。
+1. 安装 [**VxKex**](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/KexSetup_1.1.5_1679.exe) （https://github.com/i486/VxKex）。安装完成并右键**hashcatGUI.exe**，选择属性，在VxKex选项卡中启用VxKex。
 
    ![image-20260729071308273](README.assets/image-20260729071308273.png)
 

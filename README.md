@@ -8,7 +8,9 @@
 
 **HashcatGUI** is a graphical interface tool for Hashcat on Windows. Built on the Tauri framework, it facilitates configuring, executing, and managing Hashcat tasks.
 
-> [!NOTE] **HashcatGUI** may only be used for authorized security testing, password recovery, teaching and educational research. Any use targeting unauthorized systems, accounts or data is prohibited.
+> [!NOTE]
+>
+> **HashcatGUI** may only be used for authorized security testing, password recovery, teaching and educational research. Any use targeting unauthorized systems, accounts or data is prohibited.
 
 ------
 

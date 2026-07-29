@@ -1,10 +1,10 @@
 # hashcatGUI
 
-[[ 中文 ]](https://github.com/wangdong0/hashcatGUI/README_CN.md) | [[ English ]](https://github.com/wangdong0/hashcatGUI/README.md)
+[[ 中文 ]](https://github.com/wangdong0/hashcatGUI/blob/main/README_CN.md) | [[ English ]](https://github.com/wangdong0/hashcatGUI)
 
-<img src="https://badgen.net/badge/icon/windows7/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win10/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win11/?icon=windows&label"/><img src="https://img.shields.io/github/downloads/wangdong0/hashcatGUI/total"/>
+<img src="https://badgen.net/badge/icon/windows7/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win10/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win11/?icon=windows&label"/> <img src="https://img.shields.io/github/downloads/wangdong0/hashcatGUI/total"/>
 
-![Square284x284Logo](README.assets/Square284x284Logo.png)
+<p align="center">   <img src="README.assets/Square284x284Logo.png" alt="Square284x284Logo"> </p>
 
 **HashcatGUI** is a graphical interface tool for Hashcat on Windows. Built on the Tauri framework, it facilitates configuring, executing, and managing Hashcat tasks.
 
@@ -16,21 +16,25 @@
 
 
 
-## Introduction
+## 1. Introduction
 
 ### Quick Start
 
-Download hashcatGUI from Release for use.
+Download hashcatGUI from [Release](https://github.com/wangdong0/hashcatGUI/releases) for use.
+
+The **hashcatGUI+hcxtools+hashcat.7z** archive comes bundled with hcxtools (for converting cap files to the hc22000 format) and hashcat; simply extract and use.
+
+If you do not require the hc22000 conversion function and already have hashcat installed on your computer, you may download and run **hashcatGUI.exe** directly.
 
 > [!IMPORTANT]
 >
-> **Win7 users need to install VxKex (to solve the ProcessPrng issue) and MicrosoftEdgeWebView2Runtime (a dependency for program operation).**
+> **Win7 users need to install [VxKex](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/KexSetup_1.1.5_1679.exe) (to solve the ProcessPrng issue) and [MicrosoftEdgeWebView2Runtime](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/MicrosoftEdgeWebView2RuntimeInstallerX64.exe) (a dependency for program operation).**
 
-1. Install VxKex. After installation, right-click on hashcatGUI.exe, select "Properties", and enable VxKex in the "VxKex" tab.
+1. Install **[VxKex](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/KexSetup_1.1.5_1679.exe)**. After installation, right-click on hashcatGUI.exe, select "Properties", and enable VxKex in the "VxKex" tab.
 
    ![image-20260729071308273](README.assets/image-20260729071308273.png)
 
-2. Install Microsoft Edge WebView2 Runtime, complete the installation, and then launch hashcatGUI.exe.
+2. Install **[Microsoft Edge WebView2 Runtime](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/MicrosoftEdgeWebView2RuntimeInstallerX64.exe)**, complete the installation, and then launch hashcatGUI.exe.
 
 ### Main functions
 
@@ -39,7 +43,7 @@ This project is forked and further developed from [https://github.com/MeteorKai/
 We have optimized the user interface and partial program logic, as well as enriched the functionalities based on the original repository.
 
 - Supports input of hash text and hash files.
-- Automatically identifies and converts WPA-format hashes (cap, pcap, pcapng, hccapx ➡ hc22000), and parses ESSID and BSSID.
+- Automatically identifies and converts WPA-format hashes (cap, pcap, pcapng, hccapx → hc22000), and parses ESSID and BSSID.
 - Supported attack modes: Dictionary attack (0), Combinator attack (1), Mask attack (3), Dictionary + Mask attack (6, 7), and template candidates.
 - Allows simultaneous use of multiple attack modes with automatic password quantity calculation.
 - Supports CPU/GPU device selection, load configuration, and monitoring of runtime speed and temperature status.
@@ -51,7 +55,7 @@ We have optimized the user interface and partial program logic, as well as enric
 
 
 
-## Development
+## 2. Development
 
 ### Directory Instructions
 
@@ -107,7 +111,7 @@ dist-portable/hashcatGUI/hashcatGUI.exe
 
 
 
-## Disclaimers
+## 3. Disclaimers
 
 > [!WARNING]
 >

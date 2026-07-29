@@ -1,10 +1,10 @@
-# hashcatGUI
+#  hashcatGUI
 
-[[ 中文 ]](https://github.com/wangdong0/hashcatGUI/README_CN.md) | [[ English ]](https://github.com/wangdong0/hashcatGUI/README.md)
+[[ 中文 ]](https://github.com/wangdong0/hashcatGUI/blob/main/README_CN.md) | [[ English ]](https://github.com/wangdong0/hashcatGUI)
 
-<img src="https://badgen.net/badge/icon/windows7/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win10/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win11/?icon=windows&label"/><img src="https://img.shields.io/github/downloads/wangdong0/hashcatGUI/total"/>
+<img src="https://badgen.net/badge/icon/windows7/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win10/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win11/?icon=windows&label"/> <img src="https://img.shields.io/github/downloads/wangdong0/hashcatGUI/total"/>
 
-![Square284x284Logo](README.assets/Square284x284Logo.png)
+<p align="center">   <img src="README.assets/Square284x284Logo.png" alt="Square284x284Logo"> </p>
 
 **hashcatGUI** 是一个面向 Windows 的 hashcat 图形界面工具，基于 Tauri 框架，可方便地配置、运行和管理 hashcat 任务。
 
@@ -16,21 +16,25 @@
 
 
 
-## 介绍
+## 1. 介绍
 
 ### 快速上手
 
-在Release中下载hashcatGUI使用。
+在 [Release](https://github.com/wangdong0/hashcatGUI/releases) 中下载hashcatGUI使用。
+
+**hashcatGUI+hcxtools+hashcat.7z ** 压缩包中内置了 hcxtools（用于将 cap 转换为 hc22000 格式）和 hashcat程序 ，解压即用。
+
+若不需要 hc22000 转换功能，且您的电脑上已有 hashcat 程序，可直接下载 **hashcatGUI.exe** 使用。
 
 > [!IMPORTANT]
 >
-> **Win7 用户需安装VxKex（解决ProcessPrng问题）和MicrosoftEdgeWebView2Runtime（程序运行依赖）。**
+> **Win7 用户需安装[VxKex](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/KexSetup_1.1.5_1679.exe)（解决ProcessPrng问题）和[MicrosoftEdgeWebView2Runtime](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/MicrosoftEdgeWebView2RuntimeInstallerX64.exe)（程序运行依赖）。**
 
-1. 安装VxKex。安装完成并右键hashcatGUI.exe，选择属性，在VxKex选项卡中启用VxKex。
+1. 安装 [**VxKex**](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/KexSetup_1.1.5_1679.exe) 。安装完成并右键hashcatGUI.exe，选择属性，在VxKex选项卡中启用VxKex。
 
    ![image-20260729071308273](README.assets/image-20260729071308273.png)
 
-2. 安装MicrosoftEdgeWebView2Runtime，安装完成，启动hashcatGUI.exe。
+2. 安装 **[MicrosoftEdgeWebView2Runtime](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/MicrosoftEdgeWebView2RuntimeInstallerX64.exe)** ，安装完成，启动hashcatGUI.exe。
 
 ### 主要功能
 
@@ -39,7 +43,7 @@
 在原项目基础上优化了界面UI与部分逻辑，完善了软件功能。
 
 - 支持 Hash 文本与 Hash 文件输入。
-- 自动识别转换WPA格式哈希（cap、pcap、pcapng、hccapx ➡ hc22000），ESSID、BSSID解析。
+- 自动识别转换WPA格式哈希（cap、pcap、pcapng、hccapx → hc22000），ESSID、BSSID解析。
 - 支持攻击模式：字典攻击(0)、字典组合(1)、掩码攻击(3)、字典掩码组合（6、7）、模板候选。
 - 支持多种攻击模式同时使用，自动计算密码量。
 - 支持 CPU/GPU 设备选择、负载配置和运行速度、温度状态查看。
@@ -51,7 +55,7 @@
 
 
 
-## 开发
+## 2. 开发
 
 ### 目录说明
 
@@ -107,7 +111,7 @@ dist-portable/hashcatGUI/hashcatGUI.exe
 
 
 
-## 免责声明
+## 3. 免责声明
 
 > [!WARNING]
 >

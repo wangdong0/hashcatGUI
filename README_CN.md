@@ -2,13 +2,15 @@
 
 [[ 中文 ]](https://github.com/wangdong0/hashcatGUI/blob/main/README_CN.md) | [[ English ]](https://github.com/wangdong0/hashcatGUI)
 
-<img src="https://badgen.net/badge/icon/windows7/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win10/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win11/?icon=windows&label"/> <img src="https://img.shields.io/github/downloads/wangdong0/hashcatGUI/total"/>
+<img src="https://badgen.net/badge/icon/windows7/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win10/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win11/?icon=windows&label"/> ![GitHub Release](https://img.shields.io/github/v/release/wangdong0/hashcatGUI) <img src="https://img.shields.io/github/downloads/wangdong0/hashcatGUI/total"/> ![GitHub Repo stars](https://img.shields.io/github/stars/wangdong0/hashcatGUI)
 
 <p align="center">   <img src="README.assets/Square284x284Logo.png" alt="Square284x284Logo"> </p>
 
 **hashcatGUI** 是一个面向 Windows 的 hashcat 图形界面工具，基于 Tauri 框架，可方便地配置、运行和管理 hashcat 任务。
 
 > [!NOTE] **hashcatGUI** 仅用于授权安全测试、密码恢复、教学与学习研究。请勿在未授权的系统、账号或数据上使用。
+
+------
 
 ![image-20260729060549519](README.assets/image-20260729060549519.png)
 
@@ -45,7 +47,7 @@
 - 支持 Hash 文本与 Hash 文件输入。
 - 自动识别转换WPA格式哈希（cap、pcap、pcapng、hccapx → hc22000），ESSID、BSSID解析。
 - 支持攻击模式：字典攻击(0)、字典组合(1)、掩码攻击(3)、字典掩码组合（6、7）、模板候选。
-- 支持多种攻击模式同时使用，自动计算密码量。
+- 支持多种攻击模式同时使用，自动计算密码量，内置规则编辑器。
 - 支持 CPU/GPU 设备选择、负载配置和运行速度、温度状态查看。
 - 支持任务队列，多个任务按顺序运行，破解成功跳过相同 Hash。
 - 支持队列调整、任务暂停与进度恢复。

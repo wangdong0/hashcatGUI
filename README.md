@@ -2,13 +2,15 @@
 
 [[ 中文 ]](https://github.com/wangdong0/hashcatGUI/blob/main/README_CN.md) | [[ English ]](https://github.com/wangdong0/hashcatGUI)
 
-<img src="https://badgen.net/badge/icon/windows7/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win10/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win11/?icon=windows&label"/> <img src="https://img.shields.io/github/downloads/wangdong0/hashcatGUI/total"/>
+<img src="https://badgen.net/badge/icon/windows7/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win10/?icon=windows&label"/> <img src="https://badgen.net/badge/icon/win11/?icon=windows&label"/> ![GitHub Release](https://img.shields.io/github/v/release/wangdong0/hashcatGUI) <img src="https://img.shields.io/github/downloads/wangdong0/hashcatGUI/total"/> ![GitHub Repo stars](https://img.shields.io/github/stars/wangdong0/hashcatGUI)
 
 <p align="center">   <img src="README.assets/Square284x284Logo.png" alt="Square284x284Logo"> </p>
 
 **HashcatGUI** is a graphical interface tool for Hashcat on Windows. Built on the Tauri framework, it facilitates configuring, executing, and managing Hashcat tasks.
 
 > [!NOTE] **HashcatGUI** may only be used for authorized security testing, password recovery, teaching and educational research. Any use targeting unauthorized systems, accounts or data is prohibited.
+
+------
 
 ![image-20260729073511979](README.assets/image-20260729073511979.png)
 
@@ -45,7 +47,7 @@ We have optimized the user interface and partial program logic, as well as enric
 - Supports input of hash text and hash files.
 - Automatically identifies and converts WPA-format hashes (cap, pcap, pcapng, hccapx → hc22000), and parses ESSID and BSSID.
 - Supported attack modes: Dictionary attack (0), Combinator attack (1), Mask attack (3), Dictionary + Mask attack (6, 7), and template candidates.
-- Allows simultaneous use of multiple attack modes with automatic password quantity calculation.
+- Supports multiple attack modes running concurrently, automatic password count calculation, and a built-in rule editor.
 - Supports CPU/GPU device selection, load configuration, and monitoring of runtime speed and temperature status.
   Features task queue for sequential execution of multiple tasks. Successfully cracked identical hashes will be skipped. 
 - Supports queue adjustment, task suspension and progress resumption.

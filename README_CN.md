@@ -26,7 +26,7 @@
 
 在 [Release](https://github.com/wangdong0/hashcatGUI/releases) 中下载hashcatGUI使用。
 
-**hashcatGUI+hcxtools+hashcat.7z ** 压缩包中内置了 hcxtools（用于将 cap 转换为 hc22000 格式）和 hashcat程序 ，解压即用。
+**hashcatGUI+hcxtools+hashcat.7z** 压缩包中内置了 hcxtools（用于将 cap 转换为 hc22000 格式）和 hashcat程序 ，解压即用。
 
 若不需要 hc22000 转换功能，且您的电脑上已有 hashcat 程序，可直接下载 **hashcatGUI.exe** 使用。
 
@@ -44,7 +44,7 @@
 
 提供一些有助于WPA握手包跑包的预设，适合国内WiFi密码分析。
 
-下载链接：https://github.com/wangdong0/hashcatGUI/releases#release-Presets-CN
+**下载链接**：https://github.com/wangdong0/hashcatGUI/releases#release-Presets-CN
 
 #### 导入方法
 

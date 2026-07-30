@@ -1,14 +1,21 @@
-import { Info, GitBranch, ShieldAlert, Tag, X } from "lucide-react";
+import { Info, GitBranch, ShieldAlert, Tag, X, RefreshCw } from "lucide-react";
 import { createPortal } from "react-dom";
 import pkg from "../../package.json"
+import { useState } from "react";
+import { UpdateDialog } from "./UpdateDialog";
 
 type AboutDialogProps = {
   language: "zh" | "en";
   onClose: () => void;
+  updateStatus: "idle" | "checking" | "latest" | "available";
+  latestVersion: string;
+  onCheckUpdate: () => void;
 };
 
-export function AboutDialog({ language, onClose }: AboutDialogProps) {
+export function AboutDialog({ language, onClose, updateStatus, latestVersion, onCheckUpdate }: AboutDialogProps) {
   const zh = language === "zh";
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [updateResult, setUpdateResult] = useState<{ hasUpdate: boolean; latest: string } | null>(null);
 
   return createPortal(
     <div className="modal-backdrop" role="presentation">
@@ -42,9 +49,30 @@ export function AboutDialog({ language, onClose }: AboutDialogProps) {
 
         <div className="about-contact">
           <Tag size={17} />
-          <div>
-            <strong>{zh ? "版本信息" : "Version"}</strong>
-            <span>v{pkg.version}</span>
+          <div className="about-version-row">
+            <div className="about-version-info">
+              <strong>
+                {zh ? "版本信息" : "Version"}
+                <button
+                  className="update-check-btn"
+                  onClick={() => {
+                    onCheckUpdate();
+                    const hasUpdate = latestVersion !== null && latestVersion !== pkg.version;
+                    setUpdateResult({ hasUpdate, latest: latestVersion });
+                    setShowUpdateDialog(true);
+                  }}
+                  disabled={updateStatus === "checking"}
+                >
+                  <RefreshCw size={14} className={updateStatus === "checking" ? "spin" : ""} />
+                  {updateStatus === "checking" ? (zh ? "检查中..." : "Checking...") : (zh ? "检查更新" : "Check Update")}
+                </button>
+              </strong>
+            </div>
+            <span>
+              v{pkg.version}
+              {updateStatus === "latest" && ` (${zh ? "当前已是最新版本" : "Up to date"})`}
+              {updateStatus === "available" && ` (${zh ? "发现新版本" : "Update available"}: v${latestVersion})`}
+            </span>
           </div>
         </div>
 
@@ -60,6 +88,16 @@ export function AboutDialog({ language, onClose }: AboutDialogProps) {
           </div>
         </div>
       </section>
+      {showUpdateDialog && updateResult && (
+        <UpdateDialog
+          language={language}
+          hasUpdate={updateResult.hasUpdate}
+          latestVersion={updateResult.latest}
+          currentVersion={pkg.version}
+          onClose={() => setShowUpdateDialog(false)}
+          onDownload={() => setShowUpdateDialog(false)}
+        />
+      )}
     </div>,
     document.body,
   );

@@ -43,6 +43,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { AboutDialog } from "./components/AboutDialog";
+import { UpdateDialog } from "./components/UpdateDialog";
 import { Notice } from "./components/Notice";
 import { ZH_TEXT_OVERRIDES } from "./i18n/zhText";
 import { explainError } from "./lib/errorExplain";
@@ -759,6 +760,8 @@ const UI_TEXT = {
     addCharsetResource: "新增字符集",
     importCustomDictionary: "导入字典副本",
     eachDictCreatePreset: "每个字典生成一个预设",
+    selectedDictsCount: "已选择 {count} 个字典",
+    eachDictWillGeneratePreset: "每个字典将生成一个预设",
     ruleEditor: "编辑器",
     caseConversion: "大小写转换",
     lowercaseAll: "小写所有字母",
@@ -1148,6 +1151,8 @@ const UI_TEXT = {
     addCharsetResource: "Add Charset",
     importCustomDictionary: "Import Dictionary Copy",
     eachDictCreatePreset: "Create preset for each dictionary",
+    selectedDictsCount: "{count} dictionaries selected",
+    eachDictWillGeneratePreset: "Each dictionary will generate a preset",
     ruleEditor: "Editor",
     caseConversion: "Case Conversion",
     lowercaseAll: "Lowercase All",
@@ -1444,6 +1449,10 @@ function deleteExtractedPasswords(taskId: string) {
 
 export default function App() {
   const [language, setLanguage] = useState<Language>(() => getInitialLanguage());
+  const [updateStatus, setUpdateStatus] = useState<"idle" | "checking" | "latest" | "available">("idle");
+  const [latestVersion, setLatestVersion] = useState<string>("");
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [updateResult, setUpdateResult] = useState<{ hasUpdate: boolean; latest: string } | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("config");
   const [info, setInfo] = useState<HashcatInfo | null>(null);
   const [hashModes, setHashModes] = useState<HashModeInfo[]>([]);
@@ -1476,6 +1485,29 @@ export default function App() {
     const window = getCurrentWindow();
     window.setTitle(`${name} v${version} (by ${author})`);
   }, []);
+
+  // 检测更新
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const latest = await invoke<string>("check_update");
+        const currentVersion = pkg.version;
+        if (latest && latest !== currentVersion) {
+          setLatestVersion(latest);
+          setUpdateStatus("available");
+          setUpdateResult({ hasUpdate: true, latest });
+          setShowUpdateDialog(true);
+        } else if (latest === currentVersion) {
+          setLatestVersion(latest);
+          setUpdateStatus("latest");
+        }
+      } catch (e) {
+        console.error("检查更新失败 / Failed to check for updates:", e);
+      }
+    };
+
+    checkForUpdates();
+  }, [language]);
 
   useEffect(() => {
     const combined: (CustomResource & { source: "custom" | "user" })[] = [
@@ -2574,8 +2606,10 @@ export default function App() {
         
         // 关键：只从 localStorage 读取已保存的密码，不调用 read_results
         const existingPasswords = loadExtractedPasswords(newTask.taskId);
+        const savedCandidatesStr = saved?.candidates;
+        const isValidCandidates = savedCandidatesStr != null && savedCandidatesStr !== "null" && savedCandidatesStr !== "undefined";
         
-        const taskWithCandidates = saved && saved.candidates ? {
+        const taskWithCandidates = saved && isValidCandidates ? {
           ...newTask,
           config: {
             ...newTask.config,
@@ -4520,7 +4554,7 @@ export default function App() {
       workloadProfile: null,
       deviceTypes: [],
       deviceIds: null,
-      candidates: preset.candidates ? BigInt(preset.candidates) : undefined,
+      candidates: preset.candidates != null ? BigInt(preset.candidates) : undefined,
       isEstimated: preset.isEstimated,
     };
   }
@@ -4689,13 +4723,13 @@ export default function App() {
     try {
       let response: StartResponse;
     
-      // 如果任务之前被暂停过，先尝试恢复进度
-      if (item.status === "stopped" && item.taskId) {
+      // 总是尝试恢复进度（如果有 taskId）
+      if (item.taskId) {
         try {
           response = await invoke<StartResponse>("restore_attack", { taskId: item.taskId });
         } catch (restoreErr) {
           // 恢复失败，自动回退到重新执行
-          showToast(text.restoreFailed);
+          //showToast(text.restoreFailed);
           const configForBackend = {
             ...item.config,
             candidates: typeof item.config.candidates === 'string'
@@ -4787,22 +4821,44 @@ export default function App() {
     setLatestStatus(null);
     setBackendCommand("");
     try {
-      const configForBackend = {
-        ...item.config,
-        candidates: typeof item.config.candidates === 'string'
-          ? parseInt(item.config.candidates, 10)
-          : typeof item.config.candidates === 'bigint'
-            ? Number(item.config.candidates)
-            : item.config.candidates,
-      };
-      const response = await invoke<StartResponse>("start_attack", { config: configForBackend });
+      let response: StartResponse;
+
+      // 如果已有 taskId（之前运行过），优先尝试从 hashcat 检查点文件恢复进度
+      if (item.taskId) {
+        try {
+          response = await invoke<StartResponse>("restore_attack", { taskId: item.taskId });
+        } catch (restoreErr) {
+          // 恢复失败（如 restore 文件不存在或已损坏），回退到从头开始
+          showToast(text.restoreFailed);
+          const configForBackend = {
+            ...item.config,
+            candidates: typeof item.config.candidates === 'string'
+              ? parseInt(item.config.candidates, 10)
+              : typeof item.config.candidates === 'bigint'
+                ? Number(item.config.candidates)
+                : item.config.candidates,
+          };
+          response = await invoke<StartResponse>("start_attack", { config: configForBackend });
+        }
+      } else {
+        const configForBackend = {
+          ...item.config,
+          candidates: typeof item.config.candidates === 'string'
+            ? parseInt(item.config.candidates, 10)
+            : typeof item.config.candidates === 'bigint'
+              ? Number(item.config.candidates)
+              : item.config.candidates,
+        };
+        response = await invoke<StartResponse>("start_attack", { config: configForBackend });
+      }
+
       setQueueItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, taskId: response.taskId } : entry));
       setTaskId(response.taskId);
       setSelectedTaskId(response.taskId);
       setBackendCommand(response.commandPreview);
       setRunning(true);
-      setActiveTab("queue");  // 改为跳转到队列页面
-      setQueueTerminalExpanded(true);  // 展开实时终端
+      setActiveTab("queue");
+      setQueueTerminalExpanded(true);
       await refreshTasks();
     } catch (err) {
       setQueueItems((current) => current.map((entry) => entry.id === item.id
@@ -4984,7 +5040,34 @@ export default function App() {
         </DialogErrorBoundary>
       )}
       {aboutOpen && (
-        <AboutDialog language={language} onClose={() => setAboutOpen(false)} />
+        <AboutDialog 
+          language={language} 
+          onClose={() => setAboutOpen(false)}
+          updateStatus={updateStatus}
+          latestVersion={latestVersion}
+          onCheckUpdate={async () => {
+            setUpdateStatus("checking");
+            try {
+              const latest = await invoke<string>("check_update");
+              const hasUpdate = latest !== null && latest !== pkg.version;
+              setLatestVersion(latest || "");
+              setUpdateStatus(hasUpdate ? "available" : "latest");
+            } catch (e) {
+              setUpdateStatus("idle");
+              console.error("检查更新失败:", e);
+            }
+          }}
+        />
+      )}
+      {showUpdateDialog && updateResult && (
+        <UpdateDialog
+          language={language}
+          hasUpdate={updateResult.hasUpdate}
+          latestVersion={updateResult.latest}
+          currentVersion={pkg.version}
+          onClose={() => setShowUpdateDialog(false)}
+          onDownload={() => setShowUpdateDialog(false)}
+        />
       )}
       {aiOpen && (
         <AiAnalysisWindow
@@ -5302,6 +5385,7 @@ export default function App() {
                 }
               }}
               deleteCustomResource={(resource) => void deleteCustomResource(resource)}
+              setCustomResources={setCustomResources}
               updateUserDictionaryName={updateUserDictionaryName}
               groups={groups}
               setGroups={setGroups}
@@ -8156,6 +8240,7 @@ function ResourcesTab(props: {
   removeDictionary: (path: string) => void;
   saveCustomResource: (resource: CustomResource, groupId?: string) => void;
   deleteCustomResource: (resource: CustomResource) => void;
+  setCustomResources?: React.Dispatch<React.SetStateAction<CustomResource[]>>;
   updateUserDictionaryName: (path: string, name: string) => void;
   useCustomResource: (resource: CustomResource) => void;
   useResource: (resource: ResourceInfo) => void;
@@ -9315,34 +9400,52 @@ function ResourcesTab(props: {
   };
 
   // 完成管理
-  const handleSaveManage = () => {
-    // 1. 真正执行删除操作
-    deletedIds.forEach(id => {
-      if (id.startsWith("userdict-")) {
-        const dictPath = id.replace("userdict-", "");
-        props.removeDictionary(dictPath);
-      } else {
-        const selectedRes = props.customResources.find((r: CustomResource) => r.id === id);
-        if (selectedRes) {
-          props.deleteCustomResource(selectedRes);
-        }
-      }
+  const handleSaveManage = async () => {
+    // 1. 批量删除用户字典
+    deletedIds.filter(id => id.startsWith("userdict-")).forEach(id => {
+      props.removeDictionary(id.replace("userdict-", ""));
     });
     
-    // 2. 更新自定义资源排序（用户字典不参与排序）
-    const customResourcesOnly = manageResources.filter(r => r.source === "custom");
+    // 2. 批量删除自定义资源（一次性过滤）
+    const customIdsToDelete = deletedIds.filter(id => !id.startsWith("userdict-"));
+    if (customIdsToDelete.length > 0) {
+      const remaining = props.customResources.filter(r => !customIdsToDelete.includes(r.id));
+      
+      // 批量删除文件（检查引用）
+      for (const r of props.customResources.filter(r => customIdsToDelete.includes(r.id))) {
+        if (r.path) {
+          const isInAppData = (r.path.includes("custom-resource") || r.path.includes("imported-resource")) &&
+                             (r.path.includes("AppData") || r.path.includes("Roaming"));
+          if (isInAppData) {
+            const referencedByOther = remaining.some(res => res.path === r.path);
+            const referencedByPreset = props.presets?.some(preset => {
+              const paths = [preset.dictionaryPath, preset.dictionaryPath2, ...(preset.dictionaryPaths || []), preset.maskPath];
+              return paths.includes(r.path);
+            }) ?? false;
+            if (!referencedByOther && !referencedByPreset) {
+              try { await invoke("delete_custom_resource_file", { path: r.path }); } catch {}
+            }
+          }
+        }
+      }
+      
+      // 一次性更新状态
+      props.setCustomResources?.(remaining);
+      try { await invoke("write_custom_resources_file", { resourcesJson: JSON.stringify(remaining) }); } 
+      catch (e) { console.error(e); }
+    }
     
-    // 为每个资源设置排序顺序
+    // 3. 更新自定义资源排序（用户字典不参与排序）
+    const customIdsToDeleteSet = new Set(deletedIds.filter(id => !id.startsWith("userdict-")));
+    const customResourcesOnly = manageResources.filter(r => r.source === "custom" && !customIdsToDeleteSet.has(r.id));
+    
     customResourcesOnly.forEach((resource, index) => {
       const existing = props.customResources.find(r => r.id === resource.id);
       if (existing) {
-        // 创建带有新排序顺序的资源对象
         const updatedResource: CustomResource = {
           ...existing,
-          sortOrder: index  // 设置新的排序顺序
+          sortOrder: index
         };
-        
-        // 调用保存方法
         props.saveCustomResource(updatedResource);
       }
     });
@@ -9350,7 +9453,7 @@ function ResourcesTab(props: {
     invoke("write_resource_groups_file", { groupsJson: JSON.stringify(groups) })
       .catch(console.error);
 
-    // 3. 清空所有状态
+    // 4. 清空所有状态
     setSelectedIds([]);
     setDeletedIds([]);
     setIsManaging(false);
@@ -14901,12 +15004,18 @@ function AddPresetDialog(props: {
   // 使用资源处理函数
   const useResource = (resource: ResourceInfo) => {
     if (resource.kind === "dictionary") {
-      // 字典模式（模式0）下选择字典时追加到 dictionaryPaths
-      if (attackMode === 0 && selectedResourceTarget === "primary") {
-        setDictionaryPaths(prev => {
-          if (prev.includes(resource.path)) return prev;
-          return [...prev, resource.path];
-        });
+      // 字典模式（0）或字典+掩码（6）或掩码+字典（7）下选择字典时追加到 dictionaryPaths
+      if ((attackMode === 0 || attackMode === 6 || attackMode === 7) && selectedResourceTarget === "primary") {
+        // 模式6/7下每次选择替换字典，模式0下追加字典
+        if (attackMode === 6 || attackMode === 7) {
+          setDictionaryPath(resource.path); 
+          setDictionaryPaths([]);
+        } else {
+          setDictionaryPaths(prev => {
+            if (prev.includes(resource.path)) return prev;
+            return [...prev, resource.path];
+          });
+        }
       } else if (selectedResourceTarget === "primary") {
         // 其他模式下直接替换
         setDictionaryPath(resource.path);
@@ -14969,12 +15078,17 @@ function AddPresetDialog(props: {
     } else if (resource.type === "dictionary" && resource.path) {
       const dictPath = resource.path;
       // 根据目标设置不同的字典路径
-      if (attackMode === 0 && selectedResourceTarget === "primary") {
-        // 字典模式下追加到 dictionaryPaths
-        setDictionaryPaths(prev => {
-          if (prev.includes(dictPath)) return prev;
-          return [...prev, dictPath];
-        });
+      if ((attackMode === 0 || attackMode === 6 || attackMode === 7) && selectedResourceTarget === "primary") {
+        // 模式6/7下每次选择替换字典，模式0下追加字典
+        if (attackMode === 6 || attackMode === 7) {
+          setDictionaryPath(resource.path); 
+          setDictionaryPaths([]);
+        } else {
+          setDictionaryPaths(prev => {
+            if (prev.includes(dictPath)) return prev;
+            return [...prev, dictPath];
+          });
+        }
       } else if (selectedResourceTarget === "primary") {
         setDictionaryPath(dictPath);
       } else {
@@ -15005,12 +15119,17 @@ function AddPresetDialog(props: {
     const dictPath = dict.path;
     if (dictPath) {
       // 根据目标设置不同的字典路径
-      if (attackMode === 0 && selectedResourceTarget === "primary") {
-        // 字典模式下追加到 dictionaryPaths
-        setDictionaryPaths(prev => {
-          if (prev.includes(dictPath)) return prev;
-          return [...prev, dictPath];
-        });
+      if ((attackMode === 0 || attackMode === 6 || attackMode === 7) && selectedResourceTarget === "primary") {
+        // 模式6/7下每次选择替换字典，模式0下追加字典
+        if (attackMode === 6 || attackMode === 7) {
+          setDictionaryPath(dictPath); 
+          setDictionaryPaths([]);
+        } else {
+          setDictionaryPaths(prev => {
+            if (prev.includes(dictPath)) return prev;
+            return [...prev, dictPath];
+          });
+        }
       } else if (selectedResourceTarget === "primary") {
         setDictionaryPath(dictPath);
       } else {
@@ -15124,21 +15243,35 @@ function AddPresetDialog(props: {
   function handleSave() {
     setWarnMessage("");
     
-    const validation = validateAttackConfig({
-      attackMode,
-      hashMode,
-      dictionaryPath,
-      dictionaryPath2,
-      dictionaryPaths,
-      mask,
-      maskFile: maskPath,
-      templatePrefixMask: prefixMask,
-      templateSuffixMask: suffixMask,
-      requireHash: false,
-    }, props.text);
-    
-    if (!validation.valid) {
-      setWarnMessage(validation.error || "");
+    // 自定义预设验证：模式6/7支持多字典（dictionaryPaths）
+    let validationError = "";
+    if (attackMode === 6 || attackMode === 7) {
+      // 模式6/7：需要字典（支持多字典）和掩码
+      const hasDictionary = (dictionaryPath?.trim().length || 0) > 0 || dictionaryPaths.length > 0;
+      const hasMask = (mask?.trim().length || 0) > 0 || (maskPath?.trim().length || 0) > 0;
+      if (!hasDictionary) {
+        validationError = props.text.missingDictionary;
+      } else if (!hasMask) {
+        validationError = props.text.missingMask;
+      }
+    } else {
+      const validation = validateAttackConfig({
+        attackMode,
+        hashMode,
+        dictionaryPath,
+        dictionaryPath2,
+        dictionaryPaths,
+        mask,
+        maskFile: maskPath,
+        templatePrefixMask: prefixMask,
+        templateSuffixMask: suffixMask,
+        requireHash: false,
+      }, props.text);
+      validationError = validation.valid ? "" : (validation.error || "");
+    }
+
+    if (validationError) {
+      setWarnMessage(validationError);
       return;
     }
 
@@ -15150,7 +15283,12 @@ function AddPresetDialog(props: {
     };
 
     // 批量模式：每个字典生成一个预设
-    if (createPresetPerDictionary && attackMode === 0 && dictionaryPaths.length > 0) {
+    // 字典模式(0)需要勾选，字典+掩码(6)和掩码+字典(7)模式下有多个字典时自动批量生成
+    const shouldCreateMultiplePresets = 
+      (createPresetPerDictionary && attackMode === 0) ||  // 字典模式需要勾选
+      ((attackMode === 6 || attackMode === 7) && dictionaryPaths.length > 1);  // 模式6/7有多个字典时自动批量生成
+
+    if (shouldCreateMultiplePresets && dictionaryPaths.length > 0) {
       dictionaryPaths.forEach((dictPath, index) => {
         const preset: PresetConfig = {
           id: isEditing ? props.editing!.id : `preset-${Date.now()}-${index}`,
@@ -15218,7 +15356,7 @@ function AddPresetDialog(props: {
 
   const chooseDictionary = async () => {
     const result = await open({
-      multiple: attackMode === 0,  // 字典模式支持多选
+      multiple: attackMode === 0 || attackMode === 6 || attackMode === 7,  // 字典模式、字典+掩码、掩码+字典模式支持多选
       filters: [
         { name: isZh ? '所有文件' : 'All Files', extensions: ['*'] }
       ],
@@ -15227,10 +15365,22 @@ function AddPresetDialog(props: {
     
     if (result) {
       if (Array.isArray(result)) {
-        setDictionaryPaths(prev => [...prev, ...result]);
+        // 数组：模式6/7下有多个字典时替换，模式0下追加
+        if (attackMode === 6 || attackMode === 7) {
+          if (result.length > 1) {
+            setDictionaryPaths(result);  // 多个字典：使用 dictionaryPaths
+          } else if (result.length === 1) {
+            setDictionaryPath(result[0]);  // 只有1个字典：使用 dictionaryPath
+            setDictionaryPaths([]);  // 清空 dictionaryPaths
+          }
+        } else {
+          setDictionaryPaths(prev => [...prev, ...result]);
+        }
       } else {
         if (attackMode === 0) {
           setDictionaryPaths(prev => [...prev, result]);
+        } else if (attackMode === 6 || attackMode === 7) {
+          setDictionaryPaths([result]);
         } else {
           setDictionaryPath(result);
         }
@@ -15252,7 +15402,13 @@ function AddPresetDialog(props: {
     }
   };
 
-  const clearDictionary = () => setDictionaryPath("");
+  const clearDictionary = () => {
+    // 字典模式、字典+掩码、掩码+字典模式下清空 dictionaryPaths
+    if (attackMode === 0 || attackMode === 6 || attackMode === 7) {
+      setDictionaryPaths([]);
+    }
+    setDictionaryPath("");
+  };
   const clearDictionary2 = () => setDictionaryPath2("");
   const removeDictionaryFromList = (path: string) => 
     setDictionaryPaths(prev => prev.filter(p => p !== path));
@@ -15805,7 +15961,11 @@ function AddPresetDialog(props: {
                         <div className="file-input-row">
                           <input 
                             type="text" 
-                            value={dictionaryPath} 
+                            value={dictionaryPaths.length > 0 
+                              ? isZh ? `已选择 ${dictionaryPaths.length} 个字典` : `${dictionaryPaths.length} dictionaries selected`
+                              : dictionaryPath
+                            } 
+                            disabled={dictionaryPaths.length > 0}
                             onChange={(e) => setDictionaryPath(e.target.value)} 
                             placeholder={props.text.notSelected}
                             className="file-input"
@@ -15815,6 +15975,11 @@ function AddPresetDialog(props: {
                             {props.text.useResource}
                           </button>
                         </div>
+                        {dictionaryPaths.length > 0 && (
+                          <div className="hint-text">
+                            {props.text.eachDictWillGeneratePreset}
+                          </div>
+                        )}
                         {dictionaryPath && (
                           <div className="clear-button-row">
                             <button type="button" onClick={clearDictionary} className="clear-btn full-width">{props.text.clear}</button>
@@ -16038,7 +16203,11 @@ function AddPresetDialog(props: {
                         <div className="file-input-row">
                           <input 
                             type="text" 
-                            value={dictionaryPath} 
+                            value={dictionaryPaths.length > 0 
+                              ? isZh ? `已选择 ${dictionaryPaths.length} 个字典` : `${dictionaryPaths.length} dictionaries selected`
+                              : dictionaryPath
+                            } 
+                            disabled={dictionaryPaths.length > 0}
                             onChange={(e) => setDictionaryPath(e.target.value)} 
                             placeholder={props.text.notSelected}
                             className="file-input"
@@ -16048,6 +16217,11 @@ function AddPresetDialog(props: {
                             {props.text.useResource}
                           </button>
                         </div>
+                        {dictionaryPaths.length > 0 && (
+                          <div className="hint-text">
+                            {props.text.eachDictWillGeneratePreset}
+                          </div>
+                        )}
                         {dictionaryPath && (
                           <div className="clear-button-row">
                             <button type="button" onClick={clearDictionary} className="clear-btn full-width">{props.text.clear}</button>
@@ -16777,7 +16951,7 @@ function generatePresetDetail(preset: PresetConfig, text: UiText, isZh: boolean)
 
   // 获取候选数量
   const getDictCandidates = (): { candidates: bigint; isEstimated: boolean } | undefined => {
-    if (preset.candidates) {
+    if (preset.candidates != null) {
       return { 
         candidates: BigInt(preset.candidates), 
         isEstimated: preset.isEstimated || false 
@@ -17642,7 +17816,7 @@ function loadQueueItems(): QueueItem[] {
       (item.status === "pending" || item.status === "running" || item.status === "skipped" || item.status === "stopped"),
     ).map((item) => {
       // 将字符串转换回 BigInt
-      const candidates = typeof item.candidates === "string" ? BigInt(item.candidates) : item.candidates;
+      const candidates = item.candidates != null ? (typeof item.candidates === "string" ? BigInt(item.candidates) : item.candidates) : undefined;
       // 确保 isEstimated 字段被正确恢复（即使是 undefined 或 null）
       const isEstimated = item.isEstimated === true;
       return {

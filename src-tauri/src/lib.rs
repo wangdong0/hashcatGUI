@@ -1,6 +1,69 @@
 use rand::Rng;
+#[tauri::command]
+async fn check_update() -> Result<Option<String>, String> {
+    let url = "https://api.github.com/repos/wangdong0/hashcatGUI/releases/latest";
+    let client = reqwest::Client::new();
+    let resp = client
+        .get(url)
+        .header("User-Agent", "hashcatGUI-updater")
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+    let tag = json.get("tag_name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim_start_matches('v').to_string());
+    Ok(tag)
+}
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+fn convert_gbk_to_utf8(bytes: &[u8]) -> String {
+    if bytes.is_empty() {
+        return String::new();
+    }
+    if String::from_utf8(bytes.to_vec()).is_ok() {
+        return String::from_utf8_lossy(bytes).to_string();
+    }
+    let (decoded, _, had_errors) = encoding_rs::GBK.decode(bytes);
+    if had_errors {
+        return String::from_utf8_lossy(bytes).to_string();
+    }
+    decoded.to_string()
+}
+fn fix_json_escape(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let chars: Vec<char> = s.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == '\\' {
+            if i + 1 < chars.len() {
+                let next = chars[i + 1];
+                match next {
+                    '\\' | 'n' | 'r' | 't' | '\"' | '/' | 'b' | 'f' | 'u' => {
+                        result.push('\\');
+                        result.push(next);
+                        i += 2;
+                        continue;
+                    }
+                    _ => {
+                        result.push('\\');
+                        result.push('\\');
+                        i += 1;
+                        continue;
+                    }
+                }
+            } else {
+                result.push('\\');
+                result.push('\\');
+                i += 1;
+                continue;
+            }
+        }
+        result.push(chars[i]);
+        i += 1;
+    }
+    result
+}
 use std::{
     collections::HashSet,
     fs::{self, OpenOptions},
@@ -630,15 +693,20 @@ fn start_attack(
 ) -> Result<StartResponse, String> {
     start_attack_inner(app, Arc::clone(&state.active_task), config)
 }
-
 #[tauri::command]
 fn rerun_task(
     app: AppHandle,
     state: State<'_, AppState>,
     task_id: String,
 ) -> Result<StartResponse, String> {
-    let manifest = get_task(app.clone(), task_id)?;
-    start_attack_inner(app, Arc::clone(&state.active_task), manifest.config)
+    let manifest = get_task(app.clone(), task_id.clone())?;
+    let restore_path = PathBuf::from(&manifest.paths.restore_path);
+    
+    if restore_path.is_file() {
+        restore_attack(app, state, task_id)
+    } else {
+        start_attack_inner(app, Arc::clone(&state.active_task), manifest.config)
+    }
 }
 
 #[tauri::command]
@@ -2653,31 +2721,97 @@ fn spawn_reader<R>(
 ) where
     R: Read + Send + 'static,
 {
+    let task_id_for_debug = task_id.clone();
+    let stream_for_debug = stream.to_string();
     thread::spawn(move || {
-        let reader = BufReader::new(reader);
-        for line in reader.lines().map_while(Result::ok) {
-            let trimmed = line.trim();
-            if trimmed.starts_with('{') && trimmed.ends_with('}') {
-                if let Ok(data) = serde_json::from_str::<Value>(trimmed) {
+        let mut reader = reader;
+        let mut buffer = vec![0u8; 8192];
+        let mut line_bytes = Vec::new();
+        let mut total_lines = 0usize;
+        
+        loop {
+            let bytes_read = match reader.read(&mut buffer) {
+                Ok(n) => n,
+                Err(e) => {
+                    break;
+                }
+            };
+            if bytes_read == 0 {
+                if !line_bytes.is_empty() {
+                    let line_content = convert_gbk_to_utf8(&line_bytes);
+                    
+                    let trimmed = line_content.trim();
+                    if trimmed.starts_with('{') && trimmed.ends_with('}') {
+                        let fixed = fix_json_escape(trimmed);
+                        match serde_json::from_str::<Value>(&fixed) {
+                            Ok(data) => {
+                                let _ = app.emit(
+                                    "hashcat-status",
+                                    StatusPayload {
+                                        task_id: task_id.clone(),
+                                        data,
+                                    },
+                                );
+                            }
+                            Err(_) => {}
+                        }
+                    }
+                    
+                    append_log(&log_path, stream, &line_content);
                     let _ = app.emit(
-                        "hashcat-status",
-                        StatusPayload {
+                        "hashcat-log",
+                        LogPayload {
                             task_id: task_id.clone(),
-                            data,
+                            stream: stream.to_string(),
+                            line: line_content,
                         },
                     );
+                
+                    line_bytes.clear();
+                }
+                break;
+            }
+            
+            let chunk = &buffer[..bytes_read];
+            for &byte in chunk {
+                if byte == b'\n' {
+                    if !line_bytes.is_empty() {
+                        let line_content = convert_gbk_to_utf8(&line_bytes);
+                        
+                        let trimmed = line_content.trim();
+                        if trimmed.starts_with('{') && trimmed.ends_with('}') {
+                            let fixed = fix_json_escape(trimmed);
+                            
+                            match serde_json::from_str::<Value>(&fixed) {
+                                Ok(data) => {
+                                    let _ = app.emit(
+                                        "hashcat-status",
+                                        StatusPayload {
+                                            task_id: task_id.clone(),
+                                            data,
+                                        },
+                                    );
+                                }
+                                Err(_) => {}
+                            }
+                        }
+                        
+                        append_log(&log_path, stream, &line_content);
+                        let _ = app.emit(
+                            "hashcat-log",
+                            LogPayload {
+                                task_id: task_id.clone(),
+                                stream: stream.to_string(),
+                                line: line_content,
+                            },
+                        );
+                    
+                        line_bytes.clear();
+                    }
+                } else if byte != b'\r' {
+                    line_bytes.push(byte);
                 }
             }
-
-            append_log(&log_path, stream, &line);
-            let _ = app.emit(
-                "hashcat-log",
-                LogPayload {
-                    task_id: task_id.clone(),
-                    stream: stream.to_string(),
-                    line,
-                },
-            );
         }
     });
 }
@@ -4430,10 +4564,12 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_http::init())
         .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
             get_hashcat_info,
             check_hashcat_update,
+            check_update,
             get_hashcat_path_status,
             set_hashcat_install_dir,
             clear_hashcat_install_dir,

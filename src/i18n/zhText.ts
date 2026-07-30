@@ -171,6 +171,8 @@ export const ZH_TEXT_OVERRIDES = {
   addCharsetResource: "新增字符集",
   importCustomDictionary: "导入字典副本",
   eachDictCreatePreset: "每个字典生成一个预设",
+  selectedDictsCount: "已选择 {count} 个字典",
+  eachDictWillGeneratePreset: "每个字典将生成一个预设",
   ruleEditor: "编辑器",
   caseConversion: "大小写转换",
   lowercaseAll: "小写所有字母",

@@ -40,6 +40,18 @@
 
 2. 安装 **[MicrosoftEdgeWebView2Runtime](https://github.com/wangdong0/hashcatGUI/releases/download/Dependence/MicrosoftEdgeWebView2RuntimeInstallerX64.exe)** ，安装完成，启动hashcatGUI.exe。
 
+### 预设
+
+提供一些有助于WPA握手包跑包的预设，适合国内WiFi密码分析。
+
+下载链接：https://github.com/wangdong0/hashcatGUI/releases#release-Presets-CN
+
+#### 导入方法
+
+![image](README_CN.assets/629349188-86064891-64e2-47b0-bb6b-845d6d56f1bf.png)
+
+![image](README_CN.assets/629349679-2280bd52-2902-4b55-9a89-23182810ef3e.png)
+
 ### 主要功能
 
 本项目基于 https://github.com/MeteorKai/hashcatGUI 进行二次开发。
